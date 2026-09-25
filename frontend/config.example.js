@@ -1,0 +1,4 @@
+const CONFIG = {
+    WEBHOOK_URL: 'YOUR_N8N_WEBHOOK_URL',
+    API_KEY: 'YOUR_API_KEY'
+};

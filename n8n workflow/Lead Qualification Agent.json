@@ -1,0 +1,283 @@
+{
+  "name": "Lead Qualification Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "lead-incoming",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "5ed6fd9f-a2ef-4268-8649-3fef24f33868",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        16
+      ],
+      "webhookId": "9cc3cf68-cf08-463e-924f-d0c366cf1013",
+      "alwaysOutputData": false,
+      "notesInFlow": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "wZbZ5FGJaiDhGlF8",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawJson = $input.item.json;\n\n// Check common nesting layers\nconst payload = rawJson.body || rawJson.data || rawJson;\n\nif (!payload.name || !payload.email || !payload.message) {\n  // If it fails, spit out the EXACT payload n8n received so we can see the structure\n  throw new Error('REJECTED. I could not find the fields. Here is exactly what n8n received: ' + JSON.stringify(rawJson));\n}\n\nreturn {\n  name: payload.name.trim(),\n  email: payload.email.toLowerCase().trim(),\n  message: payload.message.trim()\n};"
+      },
+      "id": "1e1a68ce-fa40-4081-bbd9-1d23d3cdaf95",
+      "name": "Clean Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a ruthless lead qualification AI. Your objective is to analyze inbound messages and score the lead from 1 to 10 based exclusively on urgency and budget signals. 1 = A time-waster with no budget and zero urgency. 10 = A desperate buyer with deep pockets ready to close today. Output exactly and ONLY a raw JSON object. Do not include markdown formatting, preambles, or explanations. Schema: {\\\"score\\\": <integer>, \\\"summary\\\": \\\"<string, max 2 sentences summarizing intent>\\\", \\\"next_action\\\": \\\"<string, recommended next step>\\\"}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Name: {{$json.name}}\\nEmail: {{$json.email}}\\nMessage: {{$json.message}}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "7a0fd571-6d56-400a-845f-b99f396a64f2",
+      "name": "Groq API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -560,
+        16
+      ],
+      "notesInFlow": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "Xrmkun0Z3izF6K1U",
+          "name": "Bearer Auth account"
+        }
+      },
+      "notes": "Requires HTTP Header Auth: Authorization / Bearer YOUR_API_KEY"
+    },
+    {
+      "parameters": {
+        "jsCode": "const originalData = $('Clean Input').item.json;\nconst rawResponse = $input.item.json.choices[0].message.content;\nlet parsedAi;\n\ntry {\n  // Attempt to parse the raw string\n  parsedAi = JSON.parse(rawResponse);\n} catch (error) {\n  // If parsing fails, do NOT crash the workflow. \n  // Output a standardized fallback object so Airtable still logs the lead.\n  // score: -1 is an intentional sentinel value (not a real score) that trips\n  // the \"Score >= 7? \" IF node's OR-branch (score < 0) so this still alerts.\n  return {\n    name: originalData.name,\n    email: originalData.email,\n    message: originalData.message,\n    score: -1, \n    summary: \"SYSTEM ERROR: LLM returned malformed JSON. Manual qualification required.\",\n    next_action: \"Review immediately.\"\n  };\n}\n\n// If it succeeds, return the parsed data, but add fallbacks just in case the LLM skipped a key\nreturn {\n  name: originalData.name,\n  email: originalData.email,\n  message: originalData.message,\n  score: parsedAi.score ?? 0,\n  summary: parsedAi.summary || \"No summary provided.\",\n  next_action: parsedAi.next_action || \"Manual review needed.\"\n};"
+      },
+      "id": "83a7d52d-fcfb-46b1-92dc-db23f059b623",
+      "name": "Parse LLM Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.score }}",
+              "operation": "largerEqual",
+              "value2": 7
+            },
+            {
+              "value1": "={{ $json.score }}"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "8cb5d2f7-e553-414b-a14d-094d3f946940",
+      "name": "Score >= 7?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U0C42CP4FKN",
+          "mode": "list",
+          "cachedResultName": "adidugar7"
+        },
+        "text": "=*🚨 HOT LEAD ALERT (Score: {{ $json.score }})*\n*Name:* {{ $json.name }}\n*Email:* {{ $json.email }}\n\n*AI Summary:* {{ $json.summary }}\n*Recommended Action:* {{ $json.next_action }}\n\n*Original Message:* _{{ $json.message }}_",
+        "otherOptions": {}
+      },
+      "id": "5f6cb0bc-528b-4a37-a395-a420905a33e4",
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -48
+      ],
+      "webhookId": "8b81ab4c-4779-4d2b-9dbc-9c95d7771105",
+      "credentials": {
+        "slackApi": {
+          "id": "KFP4E3igdV2iduxL",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const clean = $('Parse LLM Output').item.json;\nreturn {\n  name: clean.name,\n  email: clean.email,\n  message: clean.message,\n  score: clean.score,\n  summary: clean.summary,\n  next_action: clean.next_action\n};"
+      },
+      "id": "edeba26b-a3e6-4868-bd42-271825f142e7",
+      "name": "Sanitize for Airtable",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "airtableTokenApi",
+        "operation": "append",
+        "application": {
+          "__rl": true,
+          "value": "app0LSKmu0Yty7efL",
+          "mode": ""
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblqaCfImQIQmTOEH",
+          "mode": ""
+        },
+        "options": {}
+      },
+      "id": "28c23f90-91b1-471c-96ae-a530cf4b71c3",
+      "name": "Airtable Fixed",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [
+        448,
+        32
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "GhjJq0Un7ZwqDkLb",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Clean Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Input": {
+      "main": [
+        [
+          {
+            "node": "Groq API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq API": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Output": {
+      "main": [
+        [
+          {
+            "node": "Score >= 7?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score >= 7?": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sanitize for Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Alert": {
+      "main": [
+        [
+          {
+            "node": "Sanitize for Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitize for Airtable": {
+      "main": [
+        [
+          {
+            "node": "Airtable Fixed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "2101ff45-1f3f-4392-b72d-b6a00f3fe6cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "541744bc99d863f61206cf67f6e7651b50723b1dbe1d5d67cb0a3eb48e786621"
+  },
+  "nodeGroups": [],
+  "id": "W0yYGVT2SKgp1oaI",
+  "tags": []
+}
