@@ -1,3 +1,9 @@
+/* Pure Brutalism */
 body {
-    background-color: #F4F4F0; 
+    background-color: #D6FF00;
+}
+
+/* Disable smooth focus rings entirely for that authentic harsh brutalist feel */
+* {
+    outline: none !important;
 }
