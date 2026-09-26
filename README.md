@@ -4,11 +4,11 @@ A high-converting, single-page enterprise lead capture frontend. This applicatio
 
 ## Screenshots
 
-### Frontend Dashboard
-![Frontend Dashboard](assets/dashboard.png)
-
 ### n8n AI Workflow
 ![n8n AI Workflow](assets/workflow.png)
+
+### Frontend Dashboard
+![Frontend Dashboard](assets/dashboard.png)
 
 ## Features
 - **Modern UI**: Built with Tailwind CSS, featuring an enterprise dark-mode aesthetic.
