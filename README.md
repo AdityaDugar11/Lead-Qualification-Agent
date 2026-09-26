@@ -2,6 +2,14 @@
 
 A high-converting, single-page enterprise lead capture frontend. This application collects lead information (Name, Email, Message) and sends it securely to an n8n automation backend where an AI agent analyzes the intent, scores the lead based on urgency and budget, and logs the results to Airtable (or triggers a Slack alert).
 
+## Screenshots
+
+### Frontend Dashboard
+![Frontend Dashboard](assets/dashboard.png)
+
+### n8n AI Workflow
+![n8n AI Workflow](assets/workflow.png)
+
 ## Features
 - **Modern UI**: Built with Tailwind CSS, featuring an enterprise dark-mode aesthetic.
 - **AI-Powered Backend**: Integrates with n8n and Groq (LLM) to automatically score and summarize incoming leads.
