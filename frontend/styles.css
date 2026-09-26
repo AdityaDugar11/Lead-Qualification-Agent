@@ -1,4 +1,0 @@
-/* Ensuring dark background across the entire viewport */
-body {
-    background-color: #111827; /* Tailwind bg-gray-900 */
-}

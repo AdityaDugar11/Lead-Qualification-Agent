@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-[#F4F4F0] flex items-center justify-center p-6 font-mono text-gray-900">
+    <div class="bg-white p-8 md:p-10 rounded-2xl w-full max-w-lg border-4 border-gray-900 shadow-[8px_8px_0px_rgba(17,24,39,1)] transition-all">
+        <div class="mb-10">
+            <h1 class="text-4xl font-black mb-2 uppercase tracking-tighter">Contact.</h1>
+            <p class="font-medium text-gray-600">Please provide your details below. We'll be in touch.</p>
+        </div>
+
+        <form id="leadForm" class="space-y-6">
+            <div>
+                <label for="name" class="block text-sm font-bold uppercase tracking-wider mb-2">Full Name</label>
+                <input type="text" id="name" name="name" required
+                    class="w-full px-4 py-3 bg-gray-50 border-4 border-gray-900 rounded-xl focus:outline-none focus:bg-white focus:translate-x-1 focus:-translate-y-1 focus:shadow-[4px_4px_0px_rgba(17,24,39,1)] transition-all duration-200"
+                    placeholder="Jane Doe">
+            </div>
+
+            <div>
+                <label for="email" class="block text-sm font-bold uppercase tracking-wider mb-2">Business Email</label>
+                <input type="email" id="email" name="email" required
+                    class="w-full px-4 py-3 bg-gray-50 border-4 border-gray-900 rounded-xl focus:outline-none focus:bg-white focus:translate-x-1 focus:-translate-y-1 focus:shadow-[4px_4px_0px_rgba(17,24,39,1)] transition-all duration-200"
+                    placeholder="jane@company.com">
+            </div>
+
+            <div>
+                <label for="message" class="block text-sm font-bold uppercase tracking-wider mb-2">Message</label>
+                <textarea id="message" name="message" rows="4" required
+                    class="w-full px-4 py-3 bg-gray-50 border-4 border-gray-900 rounded-xl focus:outline-none focus:bg-white focus:translate-x-1 focus:-translate-y-1 focus:shadow-[4px_4px_0px_rgba(17,24,39,1)] transition-all duration-200 resize-none"
+                    placeholder="How can we help?"></textarea>
+            </div>
+
+            <button type="submit" id="submitBtn"
+                class="w-full bg-blue-600 hover:bg-blue-700 active:translate-y-1 active:translate-x-1 active:shadow-none text-white font-black uppercase tracking-wider py-4 px-4 rounded-xl border-4 border-gray-900 shadow-[6px_6px_0px_rgba(17,24,39,1)] hover:shadow-[8px_8px_0px_rgba(17,24,39,1)] transition-all duration-200 focus:outline-none disabled:opacity-50 flex justify-center items-center">
+                <span id="btnText">Submit Request</span>
+                <svg id="loadingIcon" class="hidden animate-spin ml-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+
+            <div id="statusMessage" class="hidden rounded-xl p-4 text-sm mt-6 text-center font-bold border-4 transition-all duration-300"></div>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
